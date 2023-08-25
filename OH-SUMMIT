@@ -1,0 +1,162 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.service import Service  # Import Service class
+import time
+from selenium.webdriver.common.keys import Keys
+
+path_to_save_pdf = "C:\\Users\\naveed.c\\Documents\\County Doc\\OH - Summit"
+geckodriver_path = "C:\\Firefox_Driver\\geckodriver.exe"
+
+firefox_options = Options()
+firefox_options.set_preference('pdfjs.disabled', True)
+firefox_options.set_preference('browser.download.folderList', 1)
+firefox_options.set_preference('browser.download.manager.showWhenStarting', False)
+firefox_options.set_preference('browser.download.dir', path_to_save_pdf)
+
+
+service = Service(executable_path=geckodriver_path, log_output="geckodriver.log")
+
+browser = webdriver.Firefox(service=service, options=firefox_options)
+
+url = "https://selfservice.summitoh.net/web/user/disclaimer"
+browser.get(url)
+browser.maximize_window()
+time.sleep(40)
+
+accept_button = browser.find_element(By.ID, "submitDisclaimerAccept")
+accept_button.click()
+
+time.sleep(3)
+search_link = browser.find_element(By.XPATH, "//a[contains(@class, 'ss-action-page-search') and contains(@href, '/web/search/DOCSEARCH')]")
+search_link.click()
+
+time.sleep(3)
+input_start_date = browser.find_element(By.XPATH,"//input[@id='field_RecordingDateID_DOT_StartDate']")
+start_date = '08/22/2023'
+time.sleep(3)
+input_start_date.send_keys(start_date)
+
+time.sleep(3)
+input_end_date = browser.find_element(By.XPATH,"//input[@id='field_RecordingDateID_DOT_EndDate']")
+end_date = '08/22/2023'
+time.sleep(3)
+input_end_date.send_keys(end_date)
+
+browser.execute_script("window.scrollTo(0, window.scrollY + window.innerHeight/2)")
+time.sleep(2)
+input_box = browser.find_element(By.ID, "field_selfservice_documentTypes")
+input_box.click()
+
+time.sleep(2)
+input_box = browser.find_element(By.ID, "field_selfservice_documentTypes")
+browser.execute_script("arguments[0].click();", input_box)
+time.sleep(2)
+input_box.send_keys("MORTGAGE")
+time.sleep(2)
+
+select_option_script = """
+var option = document.querySelector("ul#field_selfservice_documentTypes-aclist li");
+if (option && option.textContent === "MORTGAGE") {
+    option.click();
+}
+"""
+browser.execute_script(select_option_script)
+time.sleep(2)
+input_box.clear()
+
+input_box.send_keys("Registered Land Mortgage")
+time.sleep(2)
+select_option_script = """
+var options = document.querySelectorAll("ul#field_selfservice_documentTypes-aclist li");
+for (var i = 0; i < options.length; i++) {
+    var optionText = options[i].textContent;
+    if (optionText.includes("Registered Land Mortgage")) {
+        options[i].click();
+        break;
+    }
+}
+"""
+browser.execute_script(select_option_script)
+time.sleep(2)
+input_box.clear()
+
+input_box.send_keys("Registered Land Mortgage- filled")
+time.sleep(2)
+select_option_script = """
+var options = document.querySelectorAll("ul#field_selfservice_documentTypes-aclist li");
+for (var i = 0; i < options.length; i++) {
+    var optionText = options[i].textContent;
+    if (optionText.includes("Registered Land Mortgage- filled")) {
+        options[i].click();
+        break;
+    }
+}
+"""
+browser.execute_script(select_option_script)
+time.sleep(2)
+input_box.clear()
+
+time.sleep(3)
+browser.execute_script("window.scrollTo(0, document.body.scrollHeight)")
+search_button = browser.find_element(By.ID, "searchButton")
+search_button.click()
+total_pages = 0
+total = 0
+p = 0
+while True:
+    time.sleep(3)
+    p = p + 1
+    print('Scrapping page:', p)
+    element_count = len(browser.find_elements(By.XPATH, "//li[@class='ui-li-static ui-body-inherit ui-last-child']"))
+    total_pages += element_count
+
+    ids = browser.find_elements(By.XPATH, "//div[@class='selfServiceSearchRowRight']/h1")
+    document_number = []
+    for d in ids:
+        document_number.append(d.text[0:8])
+    print('Document Numbers:', document_number)
+
+    total = total + len(document_number)
+    for i in range(len(document_number)):
+        if i <= len(document_number):
+            doc_no = browser.find_element(By.XPATH, "//h1[contains(text(),'"+document_number[i]+"')]")
+            doc_no.click()
+            time.sleep(5)
+            view = browser.find_element(By.XPATH, "//h1[contains(text(),'" + document_number[i] + "')]//parent::div//descendant::a[@title='View Document']")
+            view.click()
+            time.sleep(5)
+            browser.switch_to.frame(browser.find_element(By.XPATH, ".//iframe[@class='ss-pdfjs-lviewer']"))
+            time.sleep(8)
+            document = browser.find_element(By.XPATH, "//button[@id='download']")
+            document.click()
+            time.sleep(5)
+            browser.switch_to.default_content()
+            time.sleep(5)
+            browser.back()
+            time.sleep(5)
+            try:
+                doc_no_1 = browser.find_element(By.XPATH, "//h1[contains(text(),'" + document_number[i + 1] + "')]")
+                browser.execute_script("arguments[0].scrollIntoView(true);", doc_no_1)
+                time.sleep(5)
+                browser.execute_script("window.scrollBy(0,-150)", "")
+                time.sleep(5)
+            except Exception as e:
+                time.sleep(5)
+
+    print('Successfully downloaded', len(document_number), 'documents in page', p)
+    time.sleep(3)
+    browser.execute_script("window.scrollBy(0,210)", "")
+    try:
+        next_button = browser.find_element(By.XPATH, "//a[contains(text(),'Next')]")
+        time.sleep(5)
+        next_button.click()
+        time.sleep(5)
+    except Exception as e:
+        break
+
+    time.sleep(3)
+print('Total Pages: ', total_pages)
+print('Total downloaded documents:', total)
+
+browser.quit()
