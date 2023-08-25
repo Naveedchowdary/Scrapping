@@ -1,0 +1,105 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.firefox.options import Options
+import time
+import pyautogui
+from selenium.common.exceptions import NoSuchElementException
+
+path_to_save_pdf = "C:\\Users\\naveed.c\\Documents\\County Doc\\FL - LAKE"
+geckodriver_path = "C://Driver//geckodriver"
+
+firefox_options = Options()
+
+firefox_options.set_preference('pdfjs.disabled', True)
+firefox_options.set_preference('browser.download.folderList', 1)
+firefox_options.set_preference('browser.download.manager.showWhenStarting', False)
+firefox_options.set_preference('browser.download.dir', path_to_save_pdf)
+
+
+service = webdriver.firefox.service.Service(executable_path=geckodriver_path)
+
+
+browser = webdriver.Firefox(service=service, options=firefox_options)
+
+url = "https://probaterecords.shelbyal.com/shelby/search.do"
+browser.get(url)
+browser.maximize_window()
+
+time.sleep(2)
+search_link = browser.find_element(By.XPATH, "//a[@href='templates/disclaimer.html']")
+search_link.click()
+time.sleep(3)
+i_agree_checkbox = browser.find_element(By.ID, "iAgree")
+i_agree_checkbox.click()
+start_search_link = browser.find_element(By.ID, "startSearch")
+start_search_link.click()
+time.sleep(2)
+advanced_search_link = browser.find_element(By.ID, "AdvSearch")
+advanced_search_link.click()
+
+time.sleep(3)
+input_start_date = browser.find_element(By.ID, "frmRecDate")
+input_start_date.clear()
+start_date = '08/03/2023'
+time.sleep(1)
+input_start_date.send_keys(start_date)
+
+time.sleep(3)
+input_end_date = browser.find_element(By.ID, "toRecDate")
+input_end_date.clear()
+end_date = '08/03/2023'
+time.sleep(1)
+input_end_date.send_keys(end_date)
+
+time.sleep(2)
+search_button = browser.find_element(By.CLASS_NAME, "searchAdv")
+search_button.click()
+time.sleep(2)
+checkbox_land_records = browser.find_element(By.XPATH, "//input[@type='checkbox' and @name='IndexType' and @value='Land Records']")
+checkbox_land_records.click()
+
+time.sleep(2)
+submit_button = browser.find_element(By.XPATH, "//input[@type='submit' and @class='button' and @value='Filter']")
+submit_button.click()
+time.sleep(2)
+checkbox_deeds = browser.find_element(By.XPATH, "//input[@type='checkbox' and @name='DocTypeDesc' and @value='DEEDS']")
+checkbox_deeds.click()
+time.sleep(2)
+checkbox_mortgage = browser.find_element(By.XPATH, "//input[@type='checkbox' and @name='DocTypeDesc' and @value='MORTGAGE']")
+checkbox_mortgage.click()
+submit_button = browser.find_element(By.XPATH, "//input[@type='submit' and @class='button' and @value='Filter']")
+submit_button.click()
+browser.execute_script("window.scrollTo(0, document.body.scrollHeight / 6);")
+
+while True:
+    time.sleep(5)
+    odd_rows = browser.find_elements(By.XPATH, "/html/body/table/tbody/tr/td/form/table[3]/tbody/tr/td/table[1]/tbody/tr/td[2]/div/div[1]/table/tbody/tr/td[14]/div/a/img")
+    for view in odd_rows:
+        view.click()
+        time.sleep(15)
+        pyautogui.press('esc')
+        time.sleep(3)
+        pyautogui.press('esc')
+        time.sleep(3)
+
+    time.sleep(5)
+    even_rows = browser.find_elements(By.XPATH, "/html/body/table/tbody/tr/td/form/table[3]/tbody/tr/td/table[1]/tbody/tr/td[2]/div/div[1]/table/tbody/tr/td[14]/div/a/img")
+    for view in even_rows:
+        view.click()
+        time.sleep(15)
+        pyautogui.press('esc')
+        time.sleep(3)
+        pyautogui.press('esc')
+        time.sleep(3)
+
+    try:
+        next_link = browser.find_element(By.XPATH, "//a[contains(@class, 'next')]")
+        if next_link.get_attribute('href'):
+            next_link.click()
+            time.sleep(3)
+        else:
+            break
+    except NoSuchElementException:
+        break
+
+browser.quit()
