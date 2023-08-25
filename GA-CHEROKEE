@@ -1,0 +1,174 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.service import Service  # Import Service class
+import time
+
+path_to_save_pdf = "C:\\Users\\naveed.c\\Documents\\County Doc\\FL - LAKE"
+geckodriver_path = "C:\\\\Firefox_Driver\\\\geckodriver.exe"
+
+firefox_options = Options()
+firefox_options.set_preference('pdfjs.disabled', True)
+firefox_options.set_preference('browser.download.folderList', 1)
+firefox_options.set_preference('browser.download.manager.showWhenStarting', False)
+firefox_options.set_preference('browser.download.dir', path_to_save_pdf)
+
+
+service = Service(executable_path=geckodriver_path, log_output="geckodriver.log")
+
+browser = webdriver.Firefox(service=service, options=firefox_options)
+
+url = "https://deeds.cherokeega.com/"
+browser.get(url)
+browser.maximize_window()
+
+time.sleep(2)
+select_link = browser.find_element(By.XPATH, '/html/body/div[5]/div/div/div[2]/div/div[2]/a')
+select_link.click()
+time.sleep(2)
+accept_button = browser.find_element(By.ID, 'idAcceptYes')
+accept_button.click()
+time.sleep(8)
+select_link = browser.find_element(By.ID, 'documentTypeSelection-DocumentType').click()
+time.sleep(2)
+checkbox1 = browser.find_element(By.XPATH, '//*[@id="dt-DocumentType-276"]').click()
+time.sleep(2)
+checkbox2 = browser.find_element(By.XPATH, '//*[@id="dt-DocumentType-450"]').click()
+time.sleep(2)
+checkbox3 = browser.find_element(By.XPATH, '//*[@id="dt-DocumentType-755"]').click()
+time.sleep(2)
+select_button = browser.find_element(By.XPATH, '//html/body/div[5]/div/div/div/div[1]/div/div/div[1]/div/div/div[3]/form/table/tbody/tr[3]/td[2]/div/div[3]/a[2]')
+select_button.click()
+
+begin_date = '08/03/2023'
+end_date = '08/03/2023'
+time.sleep(3)
+input_begin_date = browser.find_element(By.XPATH, "//input[@id='beginDate-DocumentType']")
+input_begin_date.clear()
+input_begin_date.send_keys(begin_date)
+time.sleep(3)
+input_end_date = browser.find_element(By.XPATH, "//input[@id='endDate-DocumentType']")
+input_end_date.clear()
+input_end_date.send_keys(end_date)
+time.sleep(60)
+select_button = browser.find_element(By.XPATH, '//*[@id="submit-DocumentType"]')
+select_button.click()
+time.sleep(3)
+
+total_pages = 0
+total_downloaded_documents = 0
+
+while True:
+    rows = browser.find_elements(By.XPATH,
+                                 "/html/body/div[5]/div/div/div/div[2]/div/div[3]/div[1]/div/div[3]/table/tbody/tr/td/div/div[8]/table/tbody/tr/td[6]")
+
+    time.sleep(5)
+
+    for i in rows:
+        i.click()
+        time.sleep(8)
+
+        time.sleep(3)
+        view_group_button = browser.find_element(By.XPATH, '//*[@id="idViewGroup"]')
+        view_group_button.click()
+
+        time.sleep(5)
+        view_all_button = browser.find_element(By.XPATH, '//*[@id="DocumentViewButtonAll"]')
+        view_all_button.click()
+
+        time.sleep(3)
+        return_to_results_button = browser.find_element(By.XPATH, '//*[@id="returnToSearchButton"]')
+        return_to_results_button.click()
+
+        total_downloaded_documents += 1
+
+    next_button = browser.find_element(By.XPATH, "//a[contains(text(),'Next')]")
+
+    if "disabled" in next_button.get_attribute("class"):
+        break
+
+    time.sleep(5)
+
+    next_button.click()
+    total_pages += 1
+    time.sleep(10)
+
+print('Total Pages: ', total_pages)
+print('Total downloaded documents:', total_downloaded_documents)
+select_link = browser.find_element(By.ID, 'documentTypeSelection-DocumentType').click()
+time.sleep(2)
+# Deselect checkboxes
+checkbox1 = browser.find_element(By.XPATH, '//*[@id="dt-DocumentType-276"]')
+checkbox1.click()
+time.sleep(2)
+checkbox2 = browser.find_element(By.XPATH, '//*[@id="dt-DocumentType-450"]')
+checkbox2.click()
+time.sleep(2)
+checkbox3 = browser.find_element(By.XPATH, '//*[@id="dt-DocumentType-755"]')
+checkbox3.click()
+#select DEED,WARRANTY DEED
+checkbox4 = browser.find_element(By.XPATH, '//*[@id="dt-DocumentType-270"]')
+checkbox4.click()
+time.sleep(2)
+
+checkbox5 = browser.find_element(By.XPATH, '//*[@id="dt-DocumentType-880"]')
+checkbox5.click()
+time.sleep(2)
+
+checkbox6 = browser.find_element(By.XPATH, '//*[@id="dt-DocumentType-883"]')
+checkbox6.click()
+time.sleep(2)
+
+checkbox7 = browser.find_element(By.XPATH, '//*[@id="dt-DocumentType-952"]')
+checkbox7.click()
+time.sleep(2)
+
+select_button = browser.find_element(By.XPATH, '//html/body/div[5]/div/div/div/div[1]/div/div/div[1]/div/div/div[3]/form/table/tbody/tr[3]/td[2]/div/div[3]/a[2]')
+select_button.click()
+select_button = browser.find_element(By.XPATH, '//*[@id="submit-DocumentType"]')
+select_button.click()
+time.sleep(3)
+
+total_pages = 0
+total_downloaded_documents = 0
+
+while True:
+    rows = browser.find_elements(By.XPATH,
+                                 "/html/body/div[5]/div/div/div/div[2]/div/div[3]/div[1]/div/div[3]/table/tbody/tr/td/div/div[8]/table/tbody/tr/td[6]")
+
+    time.sleep(5)
+
+    for i in rows:
+        i.click()
+        time.sleep(8)
+
+        time.sleep(3)
+        view_group_button = browser.find_element(By.XPATH, '//*[@id="idViewGroup"]')
+        view_group_button.click()
+
+        time.sleep(5)
+        view_all_button = browser.find_element(By.XPATH, '//*[@id="DocumentViewButtonAll"]')
+        view_all_button.click()
+
+        time.sleep(3)
+        return_to_results_button = browser.find_element(By.XPATH, '//*[@id="returnToSearchButton"]')
+        return_to_results_button.click()
+
+        total_downloaded_documents += 1
+
+    next_button = browser.find_element(By.XPATH, "//a[contains(text(),'Next')]")
+
+    if "disabled" in next_button.get_attribute("class"):
+        break
+
+    time.sleep(5)
+
+    next_button.click()
+    total_pages += 1
+    time.sleep(10)
+
+print('Total Pages: ', total_pages)
+print('Total downloaded documents:', total_downloaded_documents)
+'''
+browser.quit()
+'''
