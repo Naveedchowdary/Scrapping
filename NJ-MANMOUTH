@@ -1,0 +1,150 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.common.exceptions import NoSuchElementException
+from time import sleep
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+path_to_chromedriver = 'C://Driver//chromedriver-win64'
+path_to_save_pdf = 'C:\\Users\\naveed.c\\Documents\\County Doc\\NJ - MANMOUTH'
+chrome_options = Options()
+chrome_options.add_experimental_option('prefs', {
+    'plugins.always_open_pdf_externally': True,            # Give True to download & Give False to view
+    'download.default_directory': path_to_save_pdf
+})
+
+# Opening browser
+browser = webdriver.Chrome(options=chrome_options)
+
+# Getting page
+url = "https://oprs.co.monmouth.nj.us/oprs/clerk/ClerkHome.aspx?op=basic"
+browser.get(url)
+browser.maximize_window()
+
+# Go to Document Search page and fill in details
+sleep(3)
+browser.find_element(By.XPATH, '//a[@title = "By Document Type"]').click()
+sleep(2)
+
+# Document type
+doc_types = ['MORTGAGE']
+''', DEEDS From 10/01/1996 to Present']
+# doc_types = ['MORTGAGE']                              # Uncomment this line and comment above & below line for only 'MORTGAGE'
+# doc_types = ['DEEDS From 10/01/1996 to Present']      # Uncomment this line and comment above two lines for only 'DEEDS From 10/01/1996 to Present'
+'''
+for doc in doc_types:
+
+    doc_type = browser.find_element(By.XPATH, '//select[@name = "ctl00$ContentPlaceHolder1$ddlDocTypeTab2"]')
+    ActionChains(browser).move_to_element(doc_type).click().send_keys(doc).perform()
+    sleep(3)
+
+    # From date
+    from_date = WebDriverWait(browser, 10).until(
+        EC.element_to_be_clickable((By.XPATH, '//input[@name = "ctl00$ContentPlaceHolder1$txtFromTab2"]')))
+    from_date.clear()
+    from_date.send_keys('08/15/2023')
+    sleep(6)
+
+    # To date
+    to_date = WebDriverWait(browser, 10).until(
+        EC.element_to_be_clickable((By.XPATH, '//input[@name = "ctl00$ContentPlaceHolder1$txtToTab2"]')))
+    to_date.clear()
+    to_date.send_keys('08/15/2023')
+    sleep(6)
+
+    # Record count
+    record_per_page = browser.find_element(By.XPATH, '//select[@name = "ctl00$ContentPlaceHolder1$ddlShowRecTab2"]')
+    browser.execute_script("arguments[0].scrollIntoView();", record_per_page)
+    ActionChains(browser).move_to_element(record_per_page).click().send_keys('100').perform()
+    sleep(2)
+
+    total_records = browser.find_element(By.XPATH, '//select[@name = "ctl00$ContentPlaceHolder1$ddlTotalRecTab2"]')
+    ActionChains(browser).move_to_element(total_records).click().send_keys('1000').perform()
+    sleep(2)
+
+    # Search records
+    search_button = browser.find_element(By.XPATH, '//input[@id = "ctl00_ContentPlaceHolder1_btnSearchTab2"]')
+    browser.execute_script("arguments[0].scrollIntoView();", search_button)
+    search_button.click()
+    sleep(5)
+
+    total_documents = 0
+
+    try:
+        image_link = browser.find_element(By.XPATH, '//input[@type = "image"]')
+        image_link.click()
+        sleep(3)
+        image_page = browser.current_window_handle
+
+        iframe = browser.find_element(By.XPATH, '//iframe[@id = "ctl00_ContentPlaceHolder1_ifrmElection"]')
+        browser.switch_to.frame(iframe)
+        sleep(2)
+
+        frame1 = browser.find_element(By.XPATH, '//frame[@name = "InstViewerHeadFrame"]')
+        browser.switch_to.frame(frame1)
+
+        while True:
+            display_image = browser.find_element(By.XPATH, '//input[@id = "btnImage"]')
+            display_image.click()
+            sleep(4)
+
+            browser.switch_to.window(image_page)
+            sleep(3)
+
+            iframe = browser.find_element(By.XPATH,
+                                          '//iframe[@id = "ctl00_ContentPlaceHolder1_ifrmElection"]')  # Re-locate the element
+            browser.switch_to.frame(iframe)
+            sleep(5)
+
+            frame2 = browser.find_element(By.XPATH, '//frame[@name = "InstViewerBodyFrame"]')
+            browser.switch_to.frame(frame2)
+            sleep(5)
+
+            get_image = browser.find_element(By.XPATH, '//img[@title = "View as PDF"]')
+            sleep(3)
+            get_image.click()
+            sleep(30)
+
+            total_documents += 1
+            print('Successfully downloaded', total_documents, 'documents.')
+
+            browser.switch_to.window(image_page)
+            sleep(3)
+
+            iframe = browser.find_element(By.XPATH,
+                                          '//iframe[@id = "ctl00_ContentPlaceHolder1_ifrmElection"]')  # Re-locate the element
+            browser.switch_to.frame(iframe)
+            sleep(2)
+
+            frame1 = browser.find_element(By.XPATH, '//frame[@name = "InstViewerHeadFrame"]')
+            browser.switch_to.frame(frame1)
+
+            try:
+                next_button = browser.find_element(By.XPATH, '//input[@id = "btnNext"]')
+
+                is_disabled = next_button.get_attribute("disabled") is not None
+
+                if is_disabled:
+                    print("Next button is disabled. No more ", doc, " documents.")
+                    break
+                else:
+                    next_button.click()
+                    sleep(7)
+
+            except NoSuchElementException:
+                print("No more pages to navigate.")
+                break
+
+    except Exception as e:
+        print("Error while downloading:", e)
+
+    print("Total ", doc, " documents downloaded: ", total_documents)
+
+    browser.switch_to.default_content()
+    search = browser.find_element(By.XPATH, '//a[@id = "ctl00_ContentPlaceHolder1_hypBasic"]')
+    search.click()
+    sleep(8)
+
+browser.quit()
