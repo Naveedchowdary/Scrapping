@@ -1,0 +1,126 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.service import Service  # Import Service class
+from time import sleep
+from selenium.webdriver.common.keys import Keys
+from selenium.common.exceptions import NoSuchElementException
+
+path_to_save_pdf = "C:\\Users\\naveed.c\\Documents\\County Doc\\FL - SEMINOLE"
+geckodriver_path = "C:\\Firefox_Driver\\geckodriver.exe"
+
+firefox_options = Options()
+firefox_options.set_preference('pdfjs.disabled', True)
+firefox_options.set_preference('browser.download.folderList', 1)
+firefox_options.set_preference('browser.download.manager.showWhenStarting', False)
+firefox_options.set_preference('browser.download.dir', path_to_save_pdf)
+
+
+service = Service(executable_path=geckodriver_path, log_output="geckodriver.log")
+
+browser = webdriver.Firefox(service=service, options=firefox_options)
+
+url = "https://recording.seminoleclerk.org/DuProcessWebInquiry/index.html"
+browser.get(url)
+browser.maximize_window()
+
+agree_button = browser.find_element(By.CLASS_NAME, "btn-success").click()
+
+sleep(3)
+input_start_date = browser.find_element(By.XPATH,"//*[@id='criteria_file_date_start']")
+input_start_date.clear()
+start_date = '08/21/2023'
+sleep(3)
+input_start_date.send_keys(start_date)
+
+sleep(2)
+input_end_date = browser.find_element(By.XPATH,"//*[@id='criteria_file_date_end']")
+input_end_date.clear()
+end_date = '08/21/2023'
+sleep(3)
+input_end_date.send_keys(end_date)
+
+sleep(3)
+doc_types = browser.find_element(By.XPATH, "//*[@id='criteria_inst_type']").click()
+sleep(3)
+doc_types = browser.find_element(By.XPATH, "//*[@id='criteria_inst_type']").click()
+sleep(2)
+mortgage = browser.find_element(By.XPATH, '/html/body/div[1]/div[2]/div[1]/div[2]/div[2]/div[2]/div[5]/select/option[46]').click()
+sleep(2)
+mortgage_intagngible = browser.find_element(By.XPATH, '/html/body/div[1]/div[2]/div[1]/div[2]/div[2]/div[2]/div[5]/select/option[47]').click()
+sleep(2)
+mortgage_No_tax = browser.find_element(By.XPATH, '/html/body/div[1]/div[2]/div[1]/div[2]/div[2]/div[2]/div[5]/select/option[48]').click()
+sleep(2)
+mortgage2 = browser.find_element(By.XPATH, '/html/body/div[1]/div[2]/div[1]/div[2]/div[2]/div[2]/div[5]/select/option[50]').click()
+sleep(2)
+mortgage3 = browser.find_element(By.XPATH, '/html/body/div[1]/div[2]/div[1]/div[2]/div[2]/div[2]/div[5]/select/option[51]').click()
+#deed
+'''
+deed = browser.find_element(By.XPATH, '/html/body/div[1]/div[2]/div[1]/div[2]/div[2]/div[2]/div[5]/select/option[18]').click()
+'''
+sleep(3)
+search_button = browser.find_element(By.XPATH, "//a[@class='btn btn-success w-40']")
+search_button.click()
+
+sleep(8)
+
+total_pages = 0
+total_records = 0
+
+while True:
+    element_count = len(browser.find_elements(By.XPATH, "//table[@id='grid']"))
+    total_pages += element_count
+    instrument_numbers = []
+    instrument_elements = browser.find_elements(By.XPATH,
+                                                "//tbody[@class='ui-widget-content ui-iggrid-tablebody ui-ig-record ui-iggrid-record']/tr/td[1]")
+    for element in instrument_elements:
+        instrument_numbers.append(element.text)
+
+    print("Current Page Instrument Numbers:")
+    print(len(instrument_numbers))
+    print(instrument_numbers)
+
+    total_records += len(instrument_numbers)
+
+    for instrument_number in instrument_numbers:
+        try:
+            instrument_link = browser.find_element(By.XPATH, f"//td[contains(text(), '{instrument_number}')]")
+            browser.execute_script("arguments[0].scrollIntoView();", instrument_link)
+            sleep(5)
+
+            browser.execute_script("window.scrollBy(0, -100);")
+            sleep(3)
+
+            instrument_link.click()
+            sleep(5)
+
+            view_button = browser.find_element(By.XPATH, "//button[contains(text(), 'View')]")
+            view_button.click()
+            sleep(15)
+
+            browser.execute_script("window.history.go(-1);")
+            sleep(8)
+
+        except NoSuchElementException:
+            print(f"Instrument link or View button not found for instrument number: {instrument_number}")
+        except Exception as e:
+            print(e)
+
+    sleep(2)
+
+    try:
+        next_button = browser.find_element(By.XPATH, "//span[@class='ui-iggrid-nextpagelabel']")
+        browser.execute_script("arguments[0].scrollIntoView();", next_button)
+        sleep(3)
+        next_button.click()
+
+    except Exception as e:
+        print("Reached the last page.")
+        break
+
+    sleep(5)
+
+print('total pages', total_pages)
+print('total records', total_records)
+
+browser.quit()
