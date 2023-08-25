@@ -1,0 +1,87 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from time import sleep
+
+path_to_save_pdf = 'C:\\Users\\naveed.c\\Documents\\County Doc\\WA - BENTON'
+chrome_options = Options()
+chrome_options.add_experimental_option('prefs', {
+    'plugins.always_open_pdf_externally': True,  # Give True to download & Give False to view
+    'download.default_directory': path_to_save_pdf
+})
+
+# Opening browser
+browser = webdriver.Chrome(options=chrome_options)
+
+# Getting page
+url = "https://erecording.co.benton.wa.us/recorder/web/login.jsp"
+browser.get(url)
+browser.maximize_window()
+sleep(7)
+
+browser.find_element(By.XPATH, '//input[@value = "Public Login"]').click()
+sleep(3)
+doc_types = browser.find_element(By.XPATH, '//*[@id="allTypesCB"]').click()
+sleep(2)
+
+deed_of_trust = browser.find_element(By.XPATH, '//*[@id="docTypes"]/select/option[23]').click()
+sleep(2)
+Mortgage = browser.find_element(By.XPATH, '//*[@id="docTypes"]/select/option[50]').click()
+
+sleep(3)
+input_start_date = browser.find_element(By.XPATH,"//*[@id='RecDateIDStart']")
+input_start_date.clear()
+start_date = '08/21/2023'
+sleep(3)
+input_start_date.send_keys(start_date)
+
+sleep(2)
+input_end_date = browser.find_element(By.XPATH,"//*[@id='RecDateIDEnd']")
+input_end_date.clear()
+end_date = '08/21/2023'
+sleep(3)
+input_end_date.send_keys(end_date)
+
+sleep(3)
+search_button = browser.find_element(By.XPATH, '//input[@value="Search"]')
+search_button.click()
+
+total_pages = 0
+total_downloaded = 0
+p = 0
+while True:
+    sleep(5)
+    p = p + 1
+    print('Scrapping page:', p)
+    element_count = len(browser.find_elements(By.XPATH, "//*[@id='searchResultsTable']/tbody/tr[1]/td[1]/strong/a"))
+    total_pages += element_count
+
+    links = browser.find_elements(By.XPATH, ".//a[contains(text(),'Deed Of Trust')]")
+    hrefs = []
+    for c in links:
+        hrefs.append(c.text)
+    total_downloaded = total_downloaded + len(hrefs)
+
+    for i in range(len(hrefs)):
+        click_mortgage_form = browser.find_element(By.LINK_TEXT, hrefs[i])
+        click_mortgage_form.click()
+        sleep(5)
+        click_view_image = browser.find_element(By.XPATH, "//a[@class='generator']")
+        click_view_image.click()
+        sleep(5)
+        browser.back()
+        sleep(5)
+    print('Successfully downloaded', len(hrefs), 'documents in page', p)
+
+    if not browser.find_elements(By.LINK_TEXT, 'Next'):
+        break
+
+    browser.find_element(By.LINK_TEXT, 'Next').click()
+    sleep(5)
+
+print('Total Pages: ', total_pages)
+print('Total Mortgage Documents: ', total_downloaded)
+print('Total downloaded documents:', total_downloaded)
