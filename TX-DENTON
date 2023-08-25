@@ -1,0 +1,309 @@
+from selenium import webdriver
+import time
+from time import sleep
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait, Select
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support.ui import Select
+from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.support import expected_conditions as EC
+
+import os
+import zipfile
+
+path = "C://Driver//chromedriver-win64"
+
+path_to_save_pdf = 'C:\\Users\\naveed.c\\Documents\\County Doc\\TX - DENTON'
+
+path_to_download_zip_files = 'C:\\Users\\naveed.c\\Documents\\County Doc\\Zip records'
+
+# chrome_options.add_argument('--headless')
+
+chrome_options = Options()
+
+chrome_options.add_experimental_option('prefs', {
+    'plugins.always_open_pdf_externally': True,  # Give True to download & Give False to view
+    'download.default_directory': path_to_download_zip_files
+    # 'download.default_directory': path_to_save_pdf
+})
+
+# Opening browser
+browser = webdriver.Chrome(options=chrome_options)
+url = "https://denton.tx.publicsearch.us/"
+browser.get(url)
+browser.maximize_window()
+
+
+###############  ************  FUNCTION DEFINITIONS HERE ********************** #############
+
+########################   LOGIN FUNCTION  #################################################
+
+def funtion_login():
+    browser.find_element(By.XPATH, '//*[@id="nav"]/ul/li[5]/div/a').click()
+
+    # Enter username and  password
+    # Username:ganisolo@superrito.com Password:Delete123
+
+    login_email = browser.find_element(By.XPATH, "//input[@type='email']")
+    login_email.send_keys('ganisolo@superrito.com')
+    sleep(2)
+    password = browser.find_element(By.XPATH, '//*[@id="main-content"]/div/div[2]/form/div/div[2]/div/input')
+    password.send_keys('Delete123')
+    sleep(3)
+    password.send_keys(Keys.ENTER)
+
+
+########################   INPUT DATE FUNCTION  #################################################
+
+def function_input_dates():
+    start_date = browser.find_element(By.XPATH, "//input[@id='recordedDateRange']")
+    end_date = browser.find_element(By.XPATH,
+                                    '//*[@id="main-content"]/div[2]/form/div[5]/div/div[2]/div[3]/div/div/input')
+    sleep(3)
+
+    ActionChains(browser).move_to_element(start_date).click().send_keys(Keys.BACKSPACE).send_keys(
+        Keys.BACKSPACE).send_keys(Keys.BACKSPACE).send_keys(Keys.BACKSPACE).send_keys(Keys.BACKSPACE).send_keys(
+        Keys.BACKSPACE).send_keys(Keys.BACKSPACE).send_keys(Keys.BACKSPACE).send_keys(Keys.BACKSPACE).perform()
+    sleep(2)
+    start_date.send_keys('08/18/2023')
+    sleep(1)
+    ActionChains(browser).move_to_element(end_date).click().send_keys(Keys.BACKSPACE).send_keys(
+        Keys.BACKSPACE).send_keys(Keys.BACKSPACE).send_keys(Keys.BACKSPACE).send_keys(Keys.BACKSPACE).send_keys(
+        Keys.BACKSPACE).send_keys(Keys.BACKSPACE).send_keys(Keys.BACKSPACE).send_keys(Keys.BACKSPACE).perform()
+    sleep(2)
+    end_date.send_keys('08/18/2023')
+
+
+############################## FILTER MORTGAGE RECORD FUNCTION ##########################################
+
+def function_filter_mortgage():
+    dropdown_selector = browser.find_element(By.XPATH, "//input[@id='docTypes-input']")
+    dropdown_selector.send_keys('DEED OF TRUST')
+    s1 = browser.find_element(By.XPATH,
+                              '//*[@id="main-content"]/div[2]/form/div[7]/div/div/div[2]/div/div/div[6]/label/div/span[1]').click()
+    time.sleep(2)
+    dropdown_selector.send_keys('DEED OF TRUST')
+    s2 = browser.find_element(By.XPATH,
+                              '//*[@id="main-content"]/div[2]/form/div[7]/div/div/div[2]/div/div/div[7]/label/div/span[1]').click()
+    time.sleep(2)
+    dropdown_selector.send_keys('DEED OF TRUST')
+    s3 = browser.find_element(By.XPATH,
+                              '//*[@id="main-content"]/div[2]/form/div[7]/div/div/div[2]/div/div/div[8]/label/div/span[1]').click()
+    time.sleep(2)
+    dropdown_selector.send_keys('DEED OF TRUST')
+    s4 = browser.find_element(By.XPATH,
+                              '//*[@id="main-content"]/div[2]/form/div[7]/div/div/div[2]/div/div/div[9]/label/div/span[1]').click()
+    sleep(2)
+    submit = browser.find_element(By.XPATH, '//*[@id="main-content"]/div[2]/form/div[14]/button[1]').click()
+    sleep(10)
+
+
+##################### FILTER DEED RECORDS FUNCTION #######################################################
+
+def function_filter_deed():
+    dropdown_selector = browser.find_element(By.XPATH, "//input[@id='docTypes-input']")
+    dropdown_selector.send_keys('Warranty Deed')
+    select1 = browser.find_element(By.XPATH,
+                                   '//*[@id="main-content"]/div[2]/form/div[7]/div/div/div[2]/div/div/div[5]/label/div/span[1]')
+    select1.click()
+    sleep(2)
+    dropdown_selector.send_keys('Warranty Deed')
+    sleep(2)
+    select2 = browser.find_element(By.XPATH,
+                                   '//*[@id="main-content"]/div[2]/form/div[7]/div/div/div[2]/div/div/div[6]/label/div/span[1]')
+    select2.click()
+    sleep(4)
+    dropdown_selector.send_keys('Deed')
+    # select3 =browser.find_element(By.XPATH,'//[input@id="docTypes-item-18"]')
+    select3 = browser.find_element(By.XPATH,
+                                   '//*[@id="main-content"]/div[2]/form/div[7]/div/div/div[2]/div/div/div[18]/label/div/span[1]')
+    select3.click()
+    sleep(4)
+    submit = browser.find_element(By.XPATH, '//*[@id="main-content"]/div[2]/form/div[14]/button[1]').click()
+    sleep(10)
+
+
+######################## ADD RECORD TO CART AND DOWNLOAD FUNCTION ###############################################
+
+def function_add_records_to_cart_and_download():
+    # Browse through all the pages and download the records
+    total_records = 0
+    p = 0
+
+    while True:
+
+        sleep(5)
+
+        current_page_button = browser.find_element(By.XPATH,
+                                                   '//*[@id="main-content"]/div/div/div[2]/div[1]/table/thead/tr/th[1]/label/div/span[1]')
+        current_page_button.click()
+        sleep(5)
+
+        sleep(3)
+        p = p + 1
+        print('Scrapping data page:.....', p)
+        # Do the collection work here
+        cart_button = browser.find_element(By.XPATH, '//*[@id="nav"]/ul/li[2]/div/a/div/div[2] ')
+
+        # Addtocart button
+        Addtocart_button = browser.find_element(By.XPATH,
+                                                '//*[@id="main-content"]/div/header/section[2]/div/div[2]/div/button/div/div[1]')
+        Addtocart_button.click()
+
+        sleep(2)
+        popUpAdd_button = browser.find_element(By.XPATH, '//span[contains (text(), "Add")]')
+        popUpAdd_button.click()
+        cart_button.click()
+
+        sleep(10)
+
+        items_number = int(cart_button.text)
+
+        print("Total items in cart is ", items_number)
+
+        total_records = total_records + items_number
+        print("total records so far..", total_records)
+
+        sleep(2)
+        place_order = browser.find_element(By.XPATH, '//*[@id="main-content"]/div/div/div[2]/div/div/a')
+        place_order.click()
+        print("succesfully placed order for ", int(cart_button.text), " items. More than 50 items not allowed at once")
+
+        # improvise here...
+
+        #sleep(15)
+
+        # Initialize WebDriverWait with a timeout
+        try:
+
+            wait = WebDriverWait(browser, 20)  # 20 seconds timeout
+
+            # Wait for the Download Now button to be clickable
+
+            download_button = wait.until(
+                EC.element_to_be_clickable((By.XPATH, '//*[@id="main-content"]/div/article/table/thead/tr/th[4]/a')))
+            download_button.click()
+
+        except TimeoutException:
+
+            print("Timeout occurred while waiting for the element.")
+
+        except Exception as e:
+            print("An error occurred while download:", str(e))
+
+        sleep(10)
+        print("succesfully downloaded all docs on page: ", p)
+
+        close_cart_button = browser.find_element(By.XPATH, '//*[@id="workspaces"]/ul/li[2]/button')
+        close_cart_button.click()
+        print("succesfully closed the cart on iteration ", p)
+
+        sleep(7)
+
+        try:
+            next_button = browser.find_element(By.XPATH, '//button[@value = "▶"]')
+
+            is_last_page = next_button.get_attribute("disabled") is not None
+
+            if is_last_page:
+                print("Last page reached. No more pages to navigate.")
+                break
+            else:
+                print("Next page found...")
+                next_button.click()
+                sleep(4)
+
+        except Exception as e:
+            break
+            time.sleep(5)
+
+    print("Final total records :", total_records)
+
+    sleep(5)
+
+    # Close search page button
+    close_search_button = browser.find_element(By.XPATH, '//*[@id="workspaces"]/ul/li/button')
+    close_search_button.click()
+
+
+########################## UNZIP RECORDS FUNCTION ##################################################
+
+# This function unzips records
+def function_unzip_records():
+    def unzip_file(zip_file_path, output_dir):
+        with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+            zip_ref.extractall(output_dir)
+
+    def listOf_files_in_zipfolder(folder_path):
+        file_list = []
+        try:
+            for filename in os.listdir(folder_path):
+                file_list.append(filename)
+        except OSError as e:
+            print("Error:", e)
+        return file_list
+
+    if __name__ == "__main__":
+        c_drive_folder = r"C:\Users\91988\OneDrive\Desktop\IonIdea\ZipRecords_DentonCounty"
+
+        zipfiles = listOf_files_in_zipfolder(c_drive_folder)
+
+        for filename in zipfiles:
+
+            # zip_file_path = path_to_download_zip_files + "/" +str(filename)
+            zip_file_path = r"C:\Users\91988\OneDrive\Desktop\IonIdea\ZipRecords_DentonCounty" + "/" + str(filename)
+
+            unzip_file(zip_file_path, path_to_save_pdf)
+
+            sleep(50)
+
+            try:
+                print(zip_file_path, "   successfully removed")
+                os.remove(zip_file_path)
+
+            except Exception as e:
+
+                print("For filename ", zip_file_path, " An error occurred while deleting zipped file:", str(e))
+
+        print("all successfully unzipped")
+
+
+############################# ******* END OF FUNCTIONS BLOCK *****  ##############################################
+
+####################  ************** MAIN FUNCTION BLOCK************** #############
+
+
+funtion_login()
+
+sleep(5)
+
+# Go to advanced search & real property
+
+advanced_search = browser.find_element(By.XPATH, "//a[contains(text(),'Advanced Search')]").click()
+function_input_dates()
+sleep(3)
+
+# Download DEED OF TRUST / MORTGAGE documents here
+
+function_filter_mortgage()
+function_add_records_to_cart_and_download()
+
+sleep(15)
+
+# Go to advanced search & real property
+
+Advanced_search = browser.find_element(By.XPATH, "//a[contains(text(),'Advanced Search')]").click()
+function_input_dates()
+sleep(7)
+
+# Download DEED documents here
+
+function_filter_deed()
+sleep(10)
+function_add_records_to_cart_and_download()
+
+sleep(10)
+
+browser.quit()
