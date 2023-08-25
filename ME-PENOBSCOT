@@ -1,0 +1,155 @@
+from selenium import webdriver
+import time
+from time import sleep
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait, Select
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.support.ui import Select
+from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import WebDriverException
+from selenium.common.exceptions import WebDriverException
+from selenium.webdriver.support import expected_conditions as EC
+
+path = "C://Driver//chromedriver"
+path_to_save_pdf = 'C:\\Users\\91988\\OneDrive\\Desktop\\ionIdea\\PenobscotCountyDocs'
+
+# chrome_options.add_argument('--headless')
+
+chrome_options = Options()
+chrome_options.add_experimental_option('prefs', {
+    'plugins.always_open_pdf_externally': True,  # Give True to download & Give False to view
+    'download.default_directory': path_to_save_pdf
+})
+
+
+################################## FUNCTIONS BLOCK ######################################
+
+def enter_dates():
+    entry_date_button = browser.find_element(By.XPATH,
+                                             "//li/a[contains(@href, 'WSIQTP=LR09D') and contains(@href, 'WSKYCD=E')]")
+    entry_date_button.click()
+    sleep(1)
+    start_date = browser.find_element(By.XPATH, '//input[@id="W9FDTA"]')
+    start_date.clear()
+    sleep(1)
+    start_date.send_keys('08182023')
+    end_date = browser.find_element(By.XPATH, '//input[@id="W9TDTA"]')
+    end_date.clear()
+    sleep(2)
+    end_date.send_keys('08182023')
+    sleep(2)
+
+
+def collect_documents():
+    total_docs = 0
+    i = 0
+    while True:
+        i += 1
+        image_links = browser.find_elements(By.XPATH, '//a[@title="View Document Image"]')
+
+        if (len(image_links) == 0):
+            print("no more records...", len(image_links))
+            break
+
+        sleep(3)
+
+        for link in image_links:
+            link.click()
+            sleep(10)
+
+            # switch browser handle
+            o_window_handles = browser.window_handles
+            new_window_handle = o_window_handles[-1]
+            browser.switch_to.window(new_window_handle)
+            total_docs += 1
+            sleep(5)
+            docImage = browser.find_element(By.XPATH, '//*[@id="ImgLst"]/div/a[1]')
+            docImage.click()
+
+            sleep(12)
+            browser.close()
+            sleep(3)
+            browser.switch_to.window(o_window_handles[0])
+            sleep(5)
+
+        # go to next page
+        image_links.clear()
+
+        wait = WebDriverWait(browser, 12)
+        next_page = wait.until(EC.visibility_of_element_located((By.XPATH, '//a[@class="nextPage"]')))
+        next_page.click()
+        sleep(10)
+
+    print("Total documents downloaded is ", total_docs)
+
+############################## MAIN FUNCTION BLOCK #############################################
+
+# Opening browser
+browser = webdriver.Chrome(options=chrome_options)
+
+try:
+    # Getting page
+
+    browser.maximize_window()
+    url = "http://www.penobscotdeeds.com/alis/ww400r.pgm"
+    browser.get(url)
+
+    sleep(10)
+
+except WebDriverException as e:
+    # Handle the WebDriverException
+    print("WebDriverException occurred:", str(e))
+
+search_registry_records = browser.find_element(By.XPATH,
+                                               '//li/a[@class="double" and contains(@href, "https://www.penobscotdeeds.com/ALIS/WW400R.HTM?WSIQTP=LR01D")]')
+search_registry_records.click()
+
+sleep(2)
+# Enter dates here
+enter_dates()
+
+############### DOC TYPES - MORTGAGE
+
+print("Running for mortgage..")
+doc_types = browser.find_element(By.XPATH, '//*[@id="W9ABR"]')
+doc_types.click()
+sleep(3)
+doc_types_mortgage = browser.find_element(By.XPATH, '//select[@id="W9ABR"]/option[29]')
+doc_types_mortgage.click()
+
+# click search
+browser.find_element(By.XPATH, '//*[@id="search"]/div/input').click()
+sleep(5)
+
+collect_documents()
+
+sleep(10)
+
+# go to the modify search
+modify_search_button = browser.find_element(By.XPATH,
+                                            "//input[@type='button' and @value='Modify Search' and @class='buttonBack']")
+modify_search_button.click()
+
+############### DOC TYPES - DEED DOCUMENT GROUP
+
+print("Running for Deed Document..")
+sleep(3)
+enter_dates()
+
+doc_types = browser.find_element(By.XPATH, '//*[@id="W9ABR"]')
+doc_types.click()
+sleep(3)
+doc_types_deed = browser.find_element(By.XPATH, '//select[@id="W9ABR"]/option[3]')
+doc_types_deed.click()
+
+# click search
+browser.find_element(By.XPATH, '//*[@id="search"]/div/input').click()
+sleep(5)
+
+collect_documents()
+
+sleep(10)
+
+browser.quit()
