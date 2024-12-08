@@ -1,1 +1,451 @@
 
+import os
+import pysftp
+import random
+import zipfile
+from time import sleep
+from threading import Lock
+from datetime import datetime
+from selenium import webdriver
+from openpyxl import load_workbook
+from pydrive.auth import GoogleAuth
+from pydrive.drive import GoogleDrive
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait, Select
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import NoSuchElementException
+
+path_to_save_pdf = 'D:\\Downloaded County Documents\\AL-BALDWIN'
+
+initiation_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+print("Initiation Time: ",initiation_time)
+
+excel_write_lock = Lock()
+
+chrome_options = Options()
+chrome_options.add_experimental_option('prefs', {
+    'plugins.always_open_pdf_externally': True,            # Give True to download & Give False to view
+    'download.default_directory': path_to_save_pdf
+})
+
+excel_file = 'C:\\Scrappers\\County_dates.xlsx'  # Change the file extension to .xlsx
+wb = load_workbook(excel_file)
+ws = wb.active
+
+counties = []
+start_dates = []
+end_dates = []
+total_downloaded = []  # Add a list to store the total downloaded records
+
+target_county = 'AL-BALDWIN'
+
+# Assuming that the first row contains headers
+headers = [cell.value for cell in ws[1]]
+
+# Find the column indexes for 'County Name', 'Start Date', 'End Date', and 'Total_documents'
+county_name_index = headers.index('County')
+start_date_index = headers.index('Start_date')
+end_date_index = headers.index('End_date')
+total_documents_index = headers.index('Total_downloaded')
+
+for row in ws.iter_rows(min_row=2):
+    county_name = row[county_name_index].value
+    if county_name == target_county:
+        start_date = row[start_date_index].value
+        end_date = row[end_date_index].value
+
+        if start_date and end_date:
+            counties.append(county_name)
+            start_dates.append(start_date)  # Format date as needed
+            end_dates.append(end_date)  # Format date as needed
+            total_downloaded.append(row[total_documents_index].value)  # Append existing total downloaded records
+
+if not counties:
+    print("No valid data found in the Excel file.")
+    exit()
+    
+d1 = start_date.strftime('%m/%d/%Y')
+d2 = end_date.strftime('%m/%d/%Y')
+
+d1_date = d1[3:5]
+d1_month = d1[0:2]
+d1_year = d1[6:11]
+
+d2_date = d2[3:5]
+d2_month = d2[0:2]
+d2_year = d2[6:11]
+
+browser = webdriver.Chrome(options=chrome_options)
+
+url = "https://baldwin.al.publicsearch.us/"
+browser.get(url)
+browser.maximize_window()
+
+a = ['01','02','03','04','05','06','07','08','09']
+if d1_month in a:
+    try:
+        b = [str(i).lstrip('0') for i in range(1, int(d1_month)+1)]
+        d1_month = b[-1]
+        print('d1_month:',d1_month)
+    except Exception as e:
+        pass
+else:
+    print('d1 month is not inbetween 1 to 9')
+    
+if d2_month in a:
+    try:
+        c = [str(i).lstrip('0') for i in range(1, int(d2_month)+1)]
+        d2_month = c[-1]
+        print('d2_month:',d2_month)
+    except Exception as e:
+        pass
+else:
+    print('d2 month is not inbetween 1 to 9')
+    
+if d1_date in a:
+    try:
+        d = [str(i).lstrip('0') for i in range(1, int(d1_date)+1)]
+        d1_date = d[-1]
+        print('d1_date:',d1_date)
+    except Exception as e:
+        pass
+else:
+    print('d1 date is not inbetween 1 to 9')
+
+if d2_date in a:
+    try:
+        e = [str(i).lstrip('0') for i in range(1, int(d2_date)+1)]
+        d2_date = e[-1]
+        print('d2_date:',d2_date)    
+    except Exception as e:
+        pass
+else:
+    print('d2 date is not inbetween 1 to 9')
+    
+try:
+    result = [d1_month, d1_date, d1_year]
+    proper_d1_date = '/'.join(result)
+    print(proper_d1_date)
+except Exception as e:
+    print('pass')
+              
+try:   
+    result = [d2_month, d2_date, d2_year]
+    proper_d2_date = '/'.join(result)
+    print(proper_d2_date)
+except Exception as e:
+    print('pass')
+
+# advance search
+sleep_duration = random.uniform(4,6)
+sleep(sleep_duration)
+advance_search = browser.find_element(By.XPATH,"//a[contains(text(),'Advanced Search')]").click()
+
+# sign in
+sleep_duration = random.uniform(4,6)
+sleep(sleep_duration)
+sign_in = browser.find_element(By.XPATH,"//a[contains(text(),'Sign In')]") ## user name = ganisolo@superrito.com & password - Delete123
+sign_in.click()
+sleep_duration = random.uniform(4,6)
+sleep(sleep_duration)
+user_name = browser.find_element(By.XPATH,"//input[@id='email']").send_keys('ganes@gustr.com')
+sleep_duration = random.uniform(2,4)
+sleep(sleep_duration)
+password = browser.find_element(By.XPATH,"//input[@class='password-input__input password-input__input--mask']").send_keys('Delete@123')
+sleep_duration = random.uniform(2,4)
+sleep(sleep_duration)
+browser.find_element(By.XPATH,"//button[@class='user-form__submit-button user-form__button']").click()
+
+sleep_duration = random.uniform(5,7)
+sleep(sleep_duration)
+cart = browser.find_element(By.XPATH,"//div[@data-testid='cart']").click()
+sleep_duration = random.uniform(3,5)
+sleep(sleep_duration)
+
+try:
+    clear_cart = browser.find_element(By.XPATH,"//button[contains(text(),'Empty Shopping Cart')]").click()
+    sleep_duration = random.uniform(4,6)
+    sleep(sleep_duration)
+except Exception as e:
+    pass
+
+close_cart = browser.find_element(By.XPATH,"//div[@id='workspaces']/ul/li[2]/button").click()
+
+def documents(docu_type):
+    sleep_duration = random.uniform(4,6)
+    sleep(sleep_duration)
+    print(f'About {docu_type}:') 
+    input_start_date = browser.find_element(By.XPATH,"//input[@id='recordedDateRange']")
+    sleep_duration = random.uniform(2,4)
+    sleep(sleep_duration)
+    input_start_date.send_keys(Keys.CONTROL, 'a')
+    sleep_duration = random.uniform(2,4)
+    sleep(sleep_duration)
+    input_start_date.send_keys(Keys.BACKSPACE)
+    sleep_duration = random.uniform(2,4)
+    sleep(sleep_duration)
+    input_start_date.send_keys(proper_d1_date)
+    sleep_duration = random.uniform(2,4)
+    sleep(sleep_duration)
+    
+    input_end_date = browser.find_element(By.XPATH,"//input[@aria-label='end date']")
+    input_end_date.click()
+    sleep_duration = random.uniform(2,4)
+    sleep(sleep_duration)
+    input_end_date.send_keys(Keys.CONTROL, 'a')
+    sleep_duration = random.uniform(2,4)
+    sleep(sleep_duration)
+    input_end_date.send_keys(Keys.BACKSPACE)
+    sleep_duration = random.uniform(2,4)
+    sleep(sleep_duration)
+    input_end_date.send_keys(proper_d2_date)
+    sleep_duration = random.uniform(2,4)
+    sleep(sleep_duration)
+    document_1 = browser.find_element(By.XPATH,"//input[@id='docTypes-input']").click()
+    sleep_duration = random.uniform(2,4)
+    sleep(sleep_duration)
+    
+    val = input_start_date.get_attribute('value')
+    if str(val)!=proper_d1_date:
+        s = 0
+        total = 0
+        print(f'{docu_type} records are not available')
+        print('Total downloaded documents:',s)
+        write_to_excel(target_county, s, total)
+        sleep_duration = random.uniform(4,6)
+        sleep(sleep_duration)
+        browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        sleep_duration = random.uniform(4,6)
+        sleep(sleep_duration)  
+        clear = browser.find_element(By.XPATH,"//button[@data-testid='advanced-search__clear'][text()='Clear']").click()
+        sleep_duration = random.uniform(4,6)
+        sleep(sleep_duration)
+    
+    else:
+        if docu_type=='Mortgage':
+            dtypes_index=[3,6,7]
+            for i in range(len(dtypes_index)):
+                document_1 = browser.find_element(By.XPATH,"//input[@id='docTypes-input']").click()
+                sleep_duration = random.uniform(2,4)
+                sleep(sleep_duration)
+                sending_1 = browser.find_element(By.XPATH,"//input[@id='docTypes-input']").send_keys('mortgage')
+                sleep_duration = random.uniform(2, 4)
+                sleep(sleep_duration)
+                security_1 = browser.find_elements(By.XPATH,"//div[@class='checkbox__controls']")
+                sleep_duration = random.uniform(2, 4)
+                sleep(sleep_duration)
+                length = 0
+                for m in security_1:
+                    length+=1
+                    if length==dtypes_index[i]:
+                        m.click()
+                sleep_duration = random.uniform(2, 4)
+                sleep(sleep_duration)
+
+        else:
+            dtypes_index_1=[8]
+            for i in range(len(dtypes_index_1)):
+                document_1 = browser.find_element(By.XPATH,"//input[@id='docTypes-input']").click()
+                sleep_duration = random.uniform(2,4)
+                sleep(sleep_duration)
+                sending_1 = browser.find_element(By.XPATH,"//input[@id='docTypes-input']").send_keys('deed')
+                sleep_duration = random.uniform(2, 4)
+                sleep(sleep_duration)
+                security_1 = browser.find_elements(By.XPATH,"//div[@class='checkbox__controls']")
+                sleep_duration = random.uniform(2, 4)
+                sleep(sleep_duration)
+                length = 0
+                for m in security_1:
+                    length+=1
+                    if length==dtypes_index_1[i]:
+                        m.click()
+                sleep_duration = random.uniform(2, 4)
+                sleep(sleep_duration)
+
+        # Search
+        sleep_duration = random.uniform(3,5)
+        sleep(sleep_duration)
+        browser.execute_script("window.scrollBy(0,600)","")
+        sleep_duration = random.uniform(2,4)
+        sleep(sleep_duration)
+        search = browser.find_element(By.XPATH,"//button[text()='Search']").click()
+        sleep_duration = random.uniform(10,14)
+        sleep(sleep_duration)
+        try:
+            no_results = browser.find_element(By.XPATH,"//button[contains(@class, 'no-search-results')]")
+            if no_results.is_displayed():
+                s = 0
+                total = 0
+                print(f'{docu_type} records are not available')
+                print('Total downloaded documents:',s)
+                write_to_excel(target_county, s, total)
+                no_results.click()
+                sleep_duration = random.uniform(5,7)
+                sleep(sleep_duration)
+                browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                sleep_duration = random.uniform(3,5)
+                sleep(sleep_duration)
+                clear = browser.find_element(By.XPATH,"//button[@data-testid='advanced-search__clear'][text()='Clear']").click()
+                sleep_duration = random.uniform(4,6)
+                sleep(sleep_duration)
+                return
+        except NoSuchElementException:
+            pass
+        
+        try:
+            rec_per_pg = browser.find_element(By.XPATH,"//div[text()='Results Per Page:']//parent::div/div[2]//button").click()
+            sleep_duration = random.uniform(3,5)
+            sleep(sleep_duration)
+            two_fifty = browser.find_element(By.XPATH,"//li/button[text()='250']").click()
+            sleep_duration = random.uniform(7,10)
+            sleep(sleep_duration)
+        except Exception as e:
+            pass
+
+        # download
+        total_pages = 0
+        total = 0
+        p = 0
+        s=0
+        while True:
+            sleep_duration = random.uniform(4,6)
+            sleep(sleep_duration)
+            p = p+1
+            print('Scrapping page:',p)
+            element_count = len(browser.find_elements(By.XPATH, "//div[@class='a11y-table']"))
+            total_pages += element_count
+
+            links = browser.find_elements(By.XPATH,"//td[@class='col-7']")
+            if len(links)!=0:
+                print(f'Total documents in page',p,':',len(links))
+                total+=len(links)
+                link = browser.find_element(By.XPATH,"//td[@class='col-7']").click()
+                sleep_duration = random.uniform(4,6)
+                sleep(sleep_duration)
+                d = 0
+                
+                for i in range(len(links)):
+                    if i<len(links):
+                        try:
+                            add_to_cart = WebDriverWait(browser, 5).until(EC.element_to_be_clickable((By.XPATH,"//button[contains(text(),'Add to Cart')]")))
+                            add_to_cart.click()
+                            sleep_duration = random.uniform(4,6)
+                            sleep(sleep_duration)
+                            add = browser.find_element(By.XPATH,"//span[contains(text(),'Add')]").click()
+                            d+=1
+                            sleep_duration = random.uniform(4,6)
+                            sleep(sleep_duration)
+                        except Exception as e:
+                            pass
+                        try:
+                            next_result = WebDriverWait(browser, 5).until(EC.element_to_be_clickable((By.XPATH,"//button[contains(text(),'Next Result')]")))
+                            next_result.click()
+                            sleep_duration = random.uniform(8,12)
+                            sleep(sleep_duration)
+                        except Exception as e:
+                            break
+                
+                sleep_duration = random.uniform(3,5)
+                sleep(sleep_duration)
+                print('Successfully added',d,'documents to cart on page:',p)    
+                back = browser.find_element(By.XPATH,"//button[contains(text(),'Back to Results')]").click()
+                
+            else:
+                d = 0
+                print(f'{docu_type} records are not available')
+   
+            sleep_duration = random.uniform(7,9)
+            sleep(sleep_duration)
+            cart = WebDriverWait(browser, 10).until(EC.element_to_be_clickable((By.XPATH,"//div[@data-testid='cart']")))
+            cart.click()
+            sleep_duration = random.uniform(7,9)
+            sleep(sleep_duration)
+
+            try:
+                place_order = browser.find_element(By.XPATH,"//a[@data-testid='orderButton'][text()='Place Your Order']").click()
+                sleep_duration = random.uniform(7, 9)
+                sleep(sleep_duration)
+                download_all = WebDriverWait(browser, 40).until(EC.element_to_be_clickable((By.XPATH,"//a[@class='css-sj7ztf'][1][text()='Download All Documents']")))
+                download_all.click()
+                s+=d
+                sleep_duration = random.uniform(24,30)
+                sleep(sleep_duration)
+            except Exception as e:
+                pass
+
+            print('Successfully downloaded',d,'documents in page',p)
+            
+            close_cart = browser.find_element(By.XPATH,"//div[@id='workspaces']/ul/li[2]/button").click()
+            sleep_duration = random.uniform(8,12)
+            sleep(sleep_duration)
+
+            try:
+                next_button = WebDriverWait(browser, 40).until(EC.visibility_of_element_located((By.XPATH, "//button[@aria-disabled='false'][@aria-label='next page']")))
+                sleep_duration = random.uniform(2,4)
+                sleep(sleep_duration)
+                browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                sleep_duration = random.uniform(2,4)
+                sleep(sleep_duration)
+                next_button.click()
+                sleep_duration = random.uniform(8,12)
+                sleep(sleep_duration)
+            except Exception as e:
+                break
+
+        print('Total Pages: ',total_pages)
+        print('Total documents:',total)
+        print('Total downloaded documents:',s)   
+
+        write_to_excel(target_county, s, total)
+        
+        sleep_duration = random.uniform(5,8)
+        sleep(sleep_duration)
+        back = WebDriverWait(browser, 20).until(EC.element_to_be_clickable((By.XPATH,"//div[@class='search-results-header__edit-search']/a/div[text()='Edit Search Criteria']")))
+        back.click()
+        sleep_duration = random.uniform(5,8)
+        sleep(sleep_duration)
+        browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        sleep_duration = random.uniform(3,5)
+        sleep(sleep_duration)
+        clear = browser.find_element(By.XPATH,"//button[@data-testid='advanced-search__clear'][text()='Clear']").click()
+        sleep_duration = random.uniform(5,7)
+        sleep(sleep_duration)
+
+def write_to_excel(target_county, total_downloaded, total_recs):
+    # Acquire the lock before writing to the Excel file
+    with excel_write_lock:
+        try:
+            # Load the existing workbook
+            wb = load_workbook(excel_file)
+            ws = wb.active
+
+            # Find the column indexes for headers
+            headers = [cell.value for cell in ws[1]]
+            total_documents_index = headers.index('Total_downloaded') + 1  # Add 1 for 1-based indexing
+            total_recs_index = headers.index('Total_records') + 1
+            
+            # Find the row corresponding to the target county
+            for row in ws.iter_rows(min_row=2, max_row=ws.max_row):
+                if row[0].value == target_county:  # Assuming target county is in the first column
+                    # Update the 'Total_documents' column with the total downloaded documents
+                    row[total_documents_index - 1].value = total_downloaded  # Subtract 1 for 0-based indexing
+                    row[total_recs_index - 1].value = total_recs  # Subtract 1 for 0-based indexing
+                    break
+
+            # Save the workbook
+            wb.save(excel_file)
+
+        finally:
+            # Release the lock after writing to the Excel file
+            pass
+
+documents('Mortgage')
+
+#documents('Deed')
+
+browser.quit()
+
+end_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+print("End Time: ",end_time)
